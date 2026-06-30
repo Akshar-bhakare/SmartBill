@@ -1,0 +1,92 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  PAID
+  OVERDUE
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id        String    @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  address   String?
+  invoices  Invoice[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(UNPAID)
+
+  // Customer snapshot info
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerAddress String?
+
+  // Business snapshot info
+  businessName    String
+  businessEmail   String
+  businessPhone   String?
+  businessAddress String?
+  businessLogo    String?
+
+  issueDate       DateTime
+  dueDate         DateTime
+
+  // Financial calculations stored as integer minor units (e.g. cents/paise)
+  subtotal        Int
+  discountType    DiscountType  @default(PERCENTAGE)
+  discountValue   Float         @default(0)
+  discountAmount  Int           @default(0)
+  taxTotal        Int           @default(0)
+  total           Int
+
+  notes           String?
+  terms           String?
+
+  items           InvoiceItem[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  description String
+  quantity    Int
+  unitPrice   Int      // Stored as integer minor units
+  taxRate     Float    // Percentage e.g. 18.0 for 18%
+  lineTotal   Int      // Minor units after tax logic
+}
