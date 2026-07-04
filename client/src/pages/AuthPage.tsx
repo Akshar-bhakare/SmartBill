@@ -31,9 +31,10 @@ const AuthPage: React.FC = () => {
     setValidationErrors({});
 
     try {
-      const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/signin';
+      const API_URL = (import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000') + '/api';
+      const endpoint = isSignUp ? '/auth/signup' : '/auth/signin';
       const payload = isSignUp ? { name, email, password } : { email, password };
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

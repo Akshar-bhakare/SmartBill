@@ -1,50 +1,12 @@
 import axios from 'axios';
 
-const CANDIDATE_PORTS = [5000, 5001, 5002, 5003, 5004, 5005];
-const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
-const candidateBaseUrls = [
-  configuredApiUrl,
-  ...CANDIDATE_PORTS.map((port) => `http://localhost:${port}/api`),
-].filter(Boolean) as string[];
-
-let resolvedApiBaseUrl: string | null = null;
-
-async function resolveApiBaseUrl() {
-  if (resolvedApiBaseUrl) {
-    return resolvedApiBaseUrl;
-  }
-
-  for (const baseUrl of candidateBaseUrls) {
-    try {
-      const healthUrl = `${baseUrl.replace(/\/$/, '')}/health`;
-      const response = await fetch(healthUrl, {
-        headers: { Accept: 'application/json' },
-      });
-
-      if (response.ok) {
-        resolvedApiBaseUrl = baseUrl;
-        return baseUrl;
-      }
-    } catch {
-      // Ignore and try the next candidate.
-    }
-  }
-
-  resolvedApiBaseUrl = candidateBaseUrls[0] || 'http://localhost:5000/api';
-  return resolvedApiBaseUrl;
-}
+const API_BASE_URL = (import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000') + '/api';
 
 export const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-apiClient.interceptors.request.use(async (config) => {
-  const baseUrl = await resolveApiBaseUrl();
-  config.baseURL = baseUrl;
-  return config;
 });
 
 apiClient.interceptors.response.use(
