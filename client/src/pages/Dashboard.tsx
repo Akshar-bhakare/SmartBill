@@ -10,6 +10,7 @@ import {
   Clock,
   AlertTriangle,
   TrendingUp,
+  IndianRupee,
 } from 'lucide-react';
 import {
   BarChart,
@@ -106,7 +107,7 @@ const Dashboard: React.FC = () => {
         <StatCard
           label="Total Revenue"
           value={formatCurrency(stats?.totalRevenue || 0)}
-          icon={<DollarSign size={18} strokeWidth={2.5} />}
+          icon={<IndianRupee size={18} strokeWidth={2.5} />}
           accent="white"
         />
         <StatCard
@@ -152,7 +153,7 @@ const Dashboard: React.FC = () => {
                       tick={{ fontSize: 11, fontWeight: 600, fill: '#999' }}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(v: number) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                      tickFormatter={(v: number) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
                     />
                     <Tooltip
                       contentStyle={{
@@ -162,7 +163,7 @@ const Dashboard: React.FC = () => {
                         fontWeight: 700,
                         fontSize: 12,
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
                     />
                     <Bar dataKey="revenue" fill="#6C3BFF" stroke="#111" strokeWidth={2} />
                   </BarChart>
