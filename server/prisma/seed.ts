@@ -6,6 +6,13 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
+  // Skip seed if data already exists
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0) {
+    console.log('⏭️  Data already exists, skipping seed.');
+    return;
+  }
+
   // Clean existing tables
   await prisma.invoiceItem.deleteMany();
   await prisma.invoice.deleteMany();
