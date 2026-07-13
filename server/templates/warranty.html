@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warranty Letter</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        color: #111;
+        line-height: 1.5;
+        padding: 32px;
+      }
+      .header {
+        text-align: center;
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+      .meta {
+        margin-bottom: 18px;
+      }
+      .meta p {
+        margin: 4px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 18px;
+      }
+      th, td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+        font-size: 12px;
+      }
+      th {
+        background: #f2f2f2;
+      }
+      .paragraph {
+        margin-top: 16px;
+        font-size: 13px;
+      }
+      .footer {
+        margin-top: 24px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">WARRANTY LETTER</div>
+    <div class="meta">
+      <p><strong>Customer Name:</strong> {{customerName}}</p>
+      <p><strong>Address:</strong> {{address}}</p>
+      <p><strong>GSTIN:</strong> {{gst}}</p>
+      <p><strong>Invoice No:</strong> {{invoiceNo}}</p>
+      <p><strong>Invoice Date:</strong> {{invoiceDate}}</p>
+      <p><strong>Product:</strong> {{product}}</p>
+      <p><strong>Manufacturer:</strong> {{manufacturer}}</p>
+    </div>
+
+    <div class="paragraph">
+      This Warranty Letter confirms that the above-mentioned product is covered under the standard warranty terms and conditions of the manufacturer. The warranty is valid for the product and associated serial numbers listed in the annexure below.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Sr No</th>
+          <th>Item Name</th>
+          <th>Serial No</th>
+          <th>Manufacturer</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{serialRows}}
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <p>Thank you.</p>
+      <p>Authorized Warranty Department</p>
+    </div>
+  </body>
+</html>

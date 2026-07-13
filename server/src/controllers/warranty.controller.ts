@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import fs from 'fs';
 import path from 'path';
-// Resolve pdf-parse callable across all CJS/ESM interop scenarios
-const _pdfMod: any = require('pdf-parse');
-const pdfParse: (buf: Buffer) => Promise<{ text: string }> =
-  typeof _pdfMod === 'function' ? _pdfMod
-  : typeof _pdfMod.default === 'function' ? _pdfMod.default
-  : _pdfMod.default?.default;
+const pdfParse: any = require('pdf-parse');
 import * as XLSX from 'xlsx';
 import puppeteer from 'puppeteer';
 import { extractInvoiceDetailsFromText } from '../services/invoiceParser.js';

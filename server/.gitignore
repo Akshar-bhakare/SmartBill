@@ -1,1 +1,5 @@
-node_modules`ndist`.env`n.env.*
+node_modules
+dist
+.env
+.env.*
+generated
