@@ -79,7 +79,7 @@ const WarrantyPage: React.FC = () => {
     try {
       const result = await warrantyApi.generate(invoiceData, serialNumbers);
       const base = (import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000');
-      const fullUrl = `${base}/api${result.downloadUrl}`;
+      const fullUrl = `${base}${result.downloadUrl}`;
       const res = await fetch(fullUrl);
       const blob = await res.blob();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
