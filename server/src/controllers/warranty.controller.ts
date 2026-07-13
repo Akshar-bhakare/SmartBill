@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import fs from 'fs';
 import path from 'path';
-// Use CommonJS require for pdf-parse to avoid interop issues after transpilation
-// which can cause pdfParse to be an object instead of a callable function.
-const pdfParse: any = require('pdf-parse');
+// Resolve pdf-parse callable across all CJS/ESM interop scenarios
+const _pdfMod: any = require('pdf-parse');
+const pdfParse: (buf: Buffer) => Promise<{ text: string }> =
+  typeof _pdfMod === 'function' ? _pdfMod
+  : typeof _pdfMod.default === 'function' ? _pdfMod.default
+  : _pdfMod.default?.default;
 import * as XLSX from 'xlsx';
 import puppeteer from 'puppeteer';
 import { extractInvoiceDetailsFromText } from '../services/invoiceParser.js';
@@ -19,7 +22,7 @@ export class WarrantyController {
     try {
       const requestWithFile = req as RequestWithFile;
       if (requestWithFile.file?.buffer) {
-        const pdfFunc: any = typeof pdfParse === 'function' ? pdfParse : (pdfParse as any).default || pdfParse;\n        const pdfData = await pdfFunc(requestWithFile.file.buffer);
+        const pdfData = await pdfParse(requestWithFile.file.buffer);
         const data = extractInvoiceDetailsFromText(pdfData.text);
         return res.status(200).json({ success: true, data });
       }
@@ -117,4 +120,8 @@ export class WarrantyController {
     }
   }
 }
+
+
+
+
 
