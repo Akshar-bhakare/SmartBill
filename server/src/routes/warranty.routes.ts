@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { WarrantyController } from '../controllers/warranty.controller.js';
+import { WarrantyHistoryController } from '../controllers/warrantyHistory.controller.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -9,5 +10,7 @@ router.post('/parse-invoice', upload.single('invoiceFile'), WarrantyController.p
 router.post('/parse-serials', upload.single('excelFile'), WarrantyController.parseSerials);
 router.post('/generate', WarrantyController.generate);
 router.get('/download/:fileName', WarrantyController.download);
+router.get('/history', WarrantyHistoryController.list);
+router.delete('/history/:id', WarrantyHistoryController.delete);
 
 export default router;

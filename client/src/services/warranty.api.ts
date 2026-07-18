@@ -50,4 +50,23 @@ export const warrantyApi = {
     const response = await apiClient.post('/warranty/generate', { invoiceData, serialNumbers });
     return response.data.data as { fileName: string; downloadUrl: string };
   },
+
+  history: async (params?: { search?: string; from?: string; to?: string }) => {
+    const response = await apiClient.get('/warranty/history', { params });
+    return response.data.data as WarrantyRecord[];
+  },
+
+  deleteRecord: async (id: string) => {
+    await apiClient.delete(`/warranty/history/${id}`);
+  },
 };
+
+export interface WarrantyRecord {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  productName: string;
+  quantity: number;
+  fileName: string;
+  generatedAt: string;
+}

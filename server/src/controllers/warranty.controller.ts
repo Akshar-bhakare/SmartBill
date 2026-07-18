@@ -4,9 +4,12 @@ import path from 'path';
 const pdfParse: any = require('pdf-parse');
 import * as XLSX from 'xlsx';
 import puppeteer from 'puppeteer';
+import { PrismaClient } from '@prisma/client';
 import { extractInvoiceDetailsFromText } from '../services/invoiceParser.js';
 import { extractSerialNumbersFromRows } from '../services/excelParser.js';
 import { buildWarrantyRows, renderWarrantyTemplate, validateSerialCount } from '../services/warrantyGenerator.js';
+
+const prisma = new PrismaClient();
 
 interface RequestWithFile extends Request {
   file?: Express.Multer.File;
@@ -87,6 +90,16 @@ export class WarrantyController {
       await page.setContent(html, { waitUntil: 'load' });
       await page.pdf({ path: outputPath, format: 'A4', printBackground: true });
       await browser.close();
+
+      await prisma.warrantyRecord.create({
+        data: {
+          invoiceNumber: invoiceData.invoiceNumber || 'N/A',
+          customerName: invoiceData.customerName || 'Customer',
+          productName: invoiceData.productName || 'Product',
+          quantity: invoiceData.quantity || 0,
+          fileName: filename,
+        },
+      });
 
       return res.status(200).json({
         success: true,
