@@ -9,94 +9,101 @@ export interface ParsedInvoiceData {
   productName: string;
   quantity: number;
   manufacturer: string;
+  // Seller info
+  sellerName: string;
+  sellerAddress: string;
+  sellerGstin: string;
+  placeOfSupply: string;
 }
 
 const normalizeText = (value: string) => value.replace(/\r\n/g, '\n').trim();
-
-const extractByLabel = (text: string, labels: string[]): string => {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    const lowerLine = line.toLowerCase();
-
-    const matchedLabel = labels.find((label) => lowerLine.includes(label.toLowerCase()));
-    if (!matchedLabel) continue;
-
-    const valueFromSameLine = line
-      .replace(new RegExp(matchedLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '')
-      .replace(/[:\-]+$/, '')
-      .trim();
-
-    if (valueFromSameLine && !valueFromSameLine.toLowerCase().includes('invoice') && !valueFromSameLine.toLowerCase().includes('customer')) {
-      return valueFromSameLine;
-    }
-
-    for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
-      const nextLine = lines[nextIndex].replace(/[:\-]+$/, '').trim();
-      if (!nextLine) continue;
-      if (labels.some((label) => lines[nextIndex].toLowerCase().includes(label.toLowerCase()))) {
-        break;
-      }
-      return nextLine;
-    }
-  }
-
-  return '';
-};
 
 export const extractInvoiceDetailsFromText = (text: string): ParsedInvoiceData => {
   const normalizedText = normalizeText(text);
   const lines = normalizedText.split('\n').map((l) => l.trim()).filter(Boolean);
 
-  const invoiceNumber = extractByLabel(normalizedText, ['tax invoice', 'invoice no', 'invoice number', 'invoice no.']);
-  const invoiceDate = extractByLabel(normalizedText, ['invoice date', 'date']);
-  const customerName = extractByLabel(normalizedText, ['customer', 'customer name', 'bill to']);
-  const gstin = extractByLabel(normalizedText, ['gstin', 'gst no', 'gst number']);
-  const warrantyNumber = extractByLabel(normalizedText, ['warranty no', 'warranty number']);
-  const companyName = extractByLabel(normalizedText, ['company', 'manufacturer']);
-  const manufacturer = companyName || 'RAYZON';
-  const customerAddress = extractByLabel(normalizedText, ['address', 'customer address']);
+  // Invoice number: line containing "Tax Invoice" e.g. "Tax Invoice SL/FY26-27/635"
+  const invoiceNumLine = lines.find((l) => /^tax invoice\s+\S/i.test(l)) || '';
+  const invoiceNumber = invoiceNumLine.replace(/^tax invoice\s+/i, '').trim() || 'N/A';
 
-  // Extract product name and quantity from lines after the Description/HSN header
+  // Invoice date: line after "Invoice Date"
+  const invDateIdx = lines.findIndex((l) => /^invoice date$/i.test(l));
+  const invoiceDate = invDateIdx >= 0 ? (lines[invDateIdx + 1] || 'N/A') : 'N/A';
+
+  // Place of supply
+  const placeOfSupplyLine = lines.find((l) => /^place of supply:/i.test(l)) || '';
+  const placeOfSupply = placeOfSupplyLine.replace(/^place of supply:\s*/i, '').trim();
+
+  // Buyer block: starts after "Total amount in words" block, ends at GSTIN line
+  // Lines 9-15 in our PDF: Dhooli Controls, address lines, GSTIN
+  const wordsIdx = lines.findIndex((l) => /total amount in words/i.test(l));
+  let buyerName = '';
+  let buyerAddressParts: string[] = [];
+  let buyerGstin = '';
+  if (wordsIdx >= 0) {
+    // Skip "Twenty-Seven..." lines, find first non-amount line
+    let i = wordsIdx + 1;
+    while (i < lines.length && /rupees|lakh|thousand|hundred|crore/i.test(lines[i])) i++;
+    buyerName = lines[i] || '';
+    i++;
+    while (i < lines.length && !/^gstin:/i.test(lines[i]) && !/^place of supply/i.test(lines[i]) && !/^tax invoice/i.test(lines[i])) {
+      buyerAddressParts.push(lines[i]);
+      i++;
+    }
+    if (/^gstin:/i.test(lines[i] || '')) {
+      buyerGstin = lines[i].replace(/^gstin:\s*/i, '').trim();
+    }
+  }
+
+  // Seller block: "SUNLECTRIC PRIVATE LIMITED" appears after Terms and conditions
+  const sellerIdx = lines.findIndex((l) => /sunlectric private limited/i.test(l));
+  let sellerName = '';
+  let sellerAddressParts: string[] = [];
+  let sellerGstin = '';
+  if (sellerIdx >= 0) {
+    sellerName = lines[sellerIdx];
+    let i = sellerIdx + 1;
+    while (i < lines.length && !/^gstin:/i.test(lines[i]) && !/^bank details/i.test(lines[i])) {
+      sellerAddressParts.push(lines[i].replace(/,$/, '').trim());
+      i++;
+    }
+    if (/^gstin:/i.test(lines[i] || '')) {
+      sellerGstin = lines[i].replace(/^gstin:\s*/i, '').trim();
+    }
+  }
+
+  // Product name and quantity from Description/HSN table
   let productName = '';
   let quantity = 0;
   const descHeaderIdx = lines.findIndex((l) => /description.*hsn/i.test(l));
   if (descHeaderIdx >= 0) {
-    // Collect lines after header until we hit the qty/price line (contains 'Units')
     const nameParts: string[] = [];
     for (let i = descHeaderIdx + 1; i < Math.min(descHeaderIdx + 6, lines.length); i++) {
-      const l = lines[i];
-      // HSN code (8 digits) is glued to qty e.g. "85414300216.00 Units" — strip 8-digit HSN prefix
-      const qtyMatch = l.match(/^\d{8}(\d+)\./);
-      if (qtyMatch) {
-        quantity = parseInt(qtyMatch[1], 10);
-        break;
-      }
-      nameParts.push(l.replace(/^\[.*?\]\s*/, '').trim());
+      const qtyMatch = lines[i].match(/^\d{8}(\d+)\./);
+      if (qtyMatch) { quantity = parseInt(qtyMatch[1], 10); break; }
+      nameParts.push(lines[i].trim());
     }
     productName = nameParts.filter(Boolean).join(' ').trim();
   }
-  if (!productName) productName = extractByLabel(normalizedText, ['product', 'item', 'description']);
-  // Fallback quantity patterns
   if (!quantity) {
     const fallback = normalizedText.match(/^\d{8}(\d+)\./m);
     if (fallback) quantity = parseInt(fallback[1], 10);
   }
 
   return {
-    customerName: customerName || 'Customer',
-    customerAddress: customerAddress || 'Address not found',
-    gstin: gstin || '',
-    invoiceNumber: invoiceNumber || 'N/A',
-    invoiceDate: invoiceDate || 'N/A',
-    warrantyNumber: warrantyNumber || '',
-    companyName: companyName || 'RAYZON',
+    customerName: buyerName || 'Customer',
+    customerAddress: buyerAddressParts.join('\n') || 'Address not found',
+    gstin: buyerGstin,
+    invoiceNumber,
+    invoiceDate,
+    warrantyNumber: `Tax Invoice ${invoiceNumber}`,
+    companyName: sellerName || 'SUNLECTRIC PRIVATE LIMITED',
     productName: productName || 'Product',
     quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 0,
-    manufacturer,
+    manufacturer: 'RAYZON',
+    sellerName: sellerName || 'SUNLECTRIC PRIVATE LIMITED',
+    sellerAddress: sellerAddressParts.join('\n'),
+    sellerGstin,
+    placeOfSupply,
   };
 };

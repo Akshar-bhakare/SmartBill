@@ -2,73 +2,90 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Warranty Letter</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        color: #111;
-        line-height: 1.5;
-        padding: 32px;
-      }
-      .header {
-        text-align: center;
-        font-weight: bold;
-        font-size: 18px;
-        margin-bottom: 20px;
-      }
-      .meta {
-        margin-bottom: 18px;
-      }
-      .meta p {
-        margin: 4px 0;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 18px;
-      }
-      th, td {
-        border: 1px solid #000;
-        padding: 8px;
-        text-align: left;
-        font-size: 12px;
-      }
-      th {
-        background: #f2f2f2;
-      }
-      .paragraph {
-        margin-top: 16px;
-        font-size: 13px;
-      }
-      .footer {
-        margin-top: 24px;
-        font-size: 12px;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; font-size: 12px; color: #111; padding: 36px 48px; line-height: 1.5; }
+
+      .logo-wrap { text-align: center; margin-bottom: 28px; }
+      .logo-wrap img { max-height: 72px; max-width: 280px; object-fit: contain; }
+
+      .parties { display: table; width: 100%; margin-bottom: 24px; }
+      .party { display: table-cell; width: 50%; vertical-align: top; padding-right: 16px; }
+      .party:last-child { padding-right: 0; }
+      .party p { margin: 1px 0; font-size: 11.5px; }
+      .party .name { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+
+      .meta-grid { border: 1px solid #ccc; margin-bottom: 20px; }
+      .meta-row { display: table; width: 100%; border-bottom: 1px solid #ccc; }
+      .meta-row:last-child { border-bottom: none; }
+      .meta-cell { display: table-cell; padding: 6px 12px; width: 50%; font-size: 11.5px; }
+      .meta-cell strong { margin-right: 4px; }
+
+      .title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 14px; }
+
+      .body-text { font-size: 11.5px; color: #c00; margin-bottom: 18px; line-height: 1.6; }
+
+      .annexure-title { font-weight: bold; font-size: 12px; margin-bottom: 6px; }
+
+      table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+      th { background: #dce6f1; border: 1px solid #999; padding: 6px 8px; text-align: left; font-weight: bold; }
+      td { border: 1px solid #999; padding: 5px 8px; vertical-align: top; }
+      tr:nth-child(even) td { background: #f7f7f7; }
     </style>
   </head>
   <body>
-    <div class="header">WARRANTY LETTER</div>
-    <div class="meta">
-      <p><strong>Customer Name:</strong> {{customerName}}</p>
-      <p><strong>Address:</strong> {{address}}</p>
-      <p><strong>GSTIN:</strong> {{gst}}</p>
-      <p><strong>Invoice No:</strong> {{invoiceNo}}</p>
-      <p><strong>Invoice Date:</strong> {{invoiceDate}}</p>
-      <p><strong>Product:</strong> {{product}}</p>
-      <p><strong>Manufacturer:</strong> {{manufacturer}}</p>
+
+    <div class="logo-wrap">
+      <img src="{{logo}}" alt="Sunlectric Logo" />
     </div>
 
-    <div class="paragraph">
-      This Warranty Letter confirms that the above-mentioned product is covered under the standard warranty terms and conditions of the manufacturer. The warranty is valid for the product and associated serial numbers listed in the annexure below.
+    <div class="parties">
+      <div class="party">
+        <p class="name">{{customerName}}</p>
+        <p>{{customerAddress}}</p>
+        <p>GSTIN: {{gst}}</p>
+        <p>Place of supply: {{placeOfSupply}}</p>
+      </div>
+      <div class="party">
+        <p class="name">{{sellerName}}</p>
+        <p>{{sellerAddress}}</p>
+        <p>GSTIN: {{sellerGstin}}</p>
+      </div>
     </div>
+
+    <div class="meta-grid">
+      <div class="meta-row">
+        <div class="meta-cell"><strong>Warranty no:</strong> {{warrantyNo}}</div>
+        <div class="meta-cell"><strong>Date:</strong> {{invoiceDate}}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-cell"><strong>Invoice no:</strong> {{invoiceNo}}</div>
+        <div class="meta-cell"><strong>Invoice date:</strong> {{invoiceDate}}</div>
+      </div>
+    </div>
+
+    <div class="title">Warranty Letter</div>
+
+    <div class="body-text">
+      The products are guaranteed by the manufacturer in accordance with the stipulations outlined in their limited
+      warranty documentation, wherein claims are addressed pursuant to their standard warranty terms and
+      conditions. The warranty commencement date shall be determined by the invoice date issued by {{sellerName}}.
+      The pertinent serial numbers of the products are enumerated in the attached annexure. We
+      hereby attest that {{sellerName}} is duly authorized to furnish you with this warranty declaration on
+      behalf of the product manufacturer, as evidenced by the invoice. In the event of disputes or claims, please
+      notify us or visit the manufacturer's website to review their warranty stipulations. We thank you for your
+      business and assure you of our support in facilitating warranty claims.
+    </div>
+
+    <div class="annexure-title">Sr No Annexure to warranty</div>
 
     <table>
       <thead>
         <tr>
           <th>Sr No</th>
           <th>Item Name</th>
-          <th>Serial No</th>
+          <th>Serial No.</th>
           <th>Manufacturer</th>
         </tr>
       </thead>
@@ -77,9 +94,5 @@
       </tbody>
     </table>
 
-    <div class="footer">
-      <p>Thank you.</p>
-      <p>Authorized Warranty Department</p>
-    </div>
   </body>
 </html>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FileText, Upload, CheckCircle2, AlertCircle, Download, Sparkles, X } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, AlertCircle, Download, Sparkles, X, History } from 'lucide-react';
 import { BrutalCard } from '../components/ui/BrutalCard';
 import { BrutalButton } from '../components/ui/BrutalButton';
 import { LoadingSpinner } from '../components/ui/Loading';
@@ -17,6 +17,7 @@ const WarrantyPage: React.FC = () => {
   const [fileName, setFileName] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
+  const [history, setHistory] = useState<{ fileName: string; invoiceNo: string; blobUrl: string; generatedAt: string }[]>([]);
 
   const quantityStatus = useMemo(() => {
     if (!invoiceData) return null;
@@ -87,6 +88,10 @@ const WarrantyPage: React.FC = () => {
       setFileName(result.fileName);
       setStatus('Warranty PDF ready');
       setShowPreview(true);
+      setHistory((prev) => [
+        { fileName: result.fileName, invoiceNo: invoiceData.invoiceNumber, blobUrl: URL.createObjectURL(blob), generatedAt: new Date().toLocaleTimeString() },
+        ...prev,
+      ]);
     } catch (err: any) {
       setError(err.message || 'Could not generate warranty PDF');
     } finally {
@@ -95,7 +100,8 @@ const WarrantyPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex gap-6">
+      <div className="flex-1 min-w-0 space-y-6">
       <div>
         <h1 className="text-3xl lg:text-4xl font-extrabold uppercase tracking-tight">Warranty Generator</h1>
         <p className="text-sm text-neutral-500 font-medium mt-1">
@@ -196,6 +202,45 @@ const WarrantyPage: React.FC = () => {
           </div>
         )}
       </BrutalCard>
+
+      </div>
+
+      {/* Generated Warranties Sidebar */}
+      <div className="w-72 shrink-0">
+        <BrutalCard className="p-4 space-y-3 sticky top-6">
+          <div className="flex items-center gap-2 font-extrabold uppercase tracking-widest text-sm">
+            <History size={15} strokeWidth={2.5} />
+            Generated Warranties
+          </div>
+          {history.length === 0 ? (
+            <p className="text-xs text-neutral-400 font-medium">No warranties generated yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {history.map((item, idx) => (
+                <div key={idx} className="border-2 border-black bg-neutral-50 p-3 space-y-1">
+                  <p className="text-xs font-bold truncate">{item.invoiceNo}</p>
+                  <p className="text-xs text-neutral-500">{item.generatedAt}</p>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => { setBlobUrl(item.blobUrl); setFileName(item.fileName); setShowPreview(true); }}
+                      className="flex-1 border-2 border-black bg-white px-2 py-1 text-xs font-bold uppercase hover:bg-neutral-100"
+                    >
+                      Preview
+                    </button>
+                    <a
+                      href={item.blobUrl}
+                      download={item.fileName}
+                      className="flex-1 border-2 border-black bg-brand-green px-2 py-1 text-xs font-bold uppercase text-center hover:opacity-90"
+                    >
+                      Download
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </BrutalCard>
+      </div>
 
       {showPreview && blobUrl ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

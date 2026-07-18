@@ -11,6 +11,10 @@ export interface ParsedInvoiceData {
   productName: string;
   quantity: number;
   manufacturer: string;
+  sellerName: string;
+  sellerAddress: string;
+  sellerGstin: string;
+  placeOfSupply: string;
 }
 
 export const warrantyApi = {
