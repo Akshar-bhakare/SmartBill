@@ -23,8 +23,7 @@ app.use(
       if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
-        console.warn(`[CORS] Blocked origin: ${origin} | Allowed: ${allowedOrigins.join(', ')}`);
-        callback(null, true); // Temporarily allow all to debug
+        callback(new Error(`CORS: origin ${origin} not allowed`));
       }
     },
     credentials: true,
