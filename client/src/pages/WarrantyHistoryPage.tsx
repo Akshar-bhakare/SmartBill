@@ -21,11 +21,14 @@ const WarrantyHistoryPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await warrantyApi.history({ search: search || undefined, from: from || undefined, to: to || undefined });
-      setRecords(data);
+      setRecords(data || []);
+    } catch (error: any) {
+      toast('Unable to load warranty history', 'error');
+      setRecords([]);
     } finally {
       setLoading(false);
     }
-  }, [search, from, to]);
+  }, [search, from, to, toast]);
 
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
 

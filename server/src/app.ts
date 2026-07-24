@@ -37,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/warranty', warrantyRoutes);
+app.use('/warranty', warrantyRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
