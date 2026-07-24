@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { BrutalCard } from '../components/ui/BrutalCard';
 import { BrutalButton } from '../components/ui/BrutalButton';
 import { LoadingSpinner } from '../components/ui/Loading';
+import { useToast } from '../components/ui/Toast';
 import { warrantyApi, WarrantyRecord } from '../services/warranty.api';
 
 const WarrantyPage: React.FC = () => {
@@ -19,9 +20,19 @@ const WarrantyPage: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
   const [recent, setRecent] = useState<WarrantyRecord[]>([]);
+  const { toast } = useToast();
+
+  const refreshRecent = async () => {
+    try {
+      const data = await warrantyApi.history();
+      setRecent(data.slice(0, 5));
+    } catch {
+      // ignore refresh errors for recent list
+    }
+  };
 
   useEffect(() => {
-    warrantyApi.history().then((data) => setRecent(data.slice(0, 5))).catch(() => {});
+    refreshRecent();
   }, []);
 
   const quantityStatus = useMemo(() => {
@@ -38,8 +49,11 @@ const WarrantyPage: React.FC = () => {
     try {
       const parsed = await warrantyApi.parseInvoice(file);
       setInvoiceData(parsed); setStatus('Invoice details extracted');
-    } catch (err: any) { setError(err.message || 'Unable to parse invoice'); }
-    finally { setLoading(false); }
+      toast('Invoice parsed successfully', 'success');
+    } catch (err: any) {
+      setError(err.message || 'Unable to parse invoice');
+      toast(err.message || 'Unable to parse invoice', 'error');
+    } finally { setLoading(false); }
   };
 
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,8 +63,11 @@ const WarrantyPage: React.FC = () => {
     try {
       const parsed = await warrantyApi.parseSerials(file);
       setSerialNumbers(parsed.serialNumbers); setStatus('Serial numbers loaded');
-    } catch (err: any) { setError(err.message || 'Unable to read Excel file'); }
-    finally { setLoading(false); }
+      toast('Serial numbers loaded successfully', 'success');
+    } catch (err: any) {
+      setError(err.message || 'Unable to read Excel file');
+      toast(err.message || 'Unable to read Excel file', 'error');
+    } finally { setLoading(false); }
   };
 
   const generateWarranty = async () => {
@@ -66,9 +83,12 @@ const WarrantyPage: React.FC = () => {
       setFileName(result.fileName);
       setStatus('Warranty PDF ready');
       setShowPreview(true);
-      warrantyApi.history().then((data) => setRecent(data.slice(0, 5))).catch(() => {});
-    } catch (err: any) { setError(err.message || 'Could not generate warranty PDF'); }
-    finally { setLoading(false); }
+      toast('Warranty PDF generated successfully', 'success');
+      refreshRecent();
+    } catch (err: any) {
+      setError(err.message || 'Could not generate warranty PDF');
+      toast(err.message || 'Could not generate warranty PDF', 'error');
+    } finally { setLoading(false); }
   };
 
   return (
