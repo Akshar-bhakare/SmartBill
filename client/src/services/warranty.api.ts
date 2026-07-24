@@ -48,7 +48,7 @@ export const warrantyApi = {
 
   generate: async (invoiceData: ParsedInvoiceData, serialNumbers: string[]) => {
     const response = await apiClient.post('/warranty/generate', { invoiceData, serialNumbers });
-    return response.data.data as { fileName: string; downloadUrl: string };
+    return response.data.data as { fileName: string; downloadUrl: string; record: WarrantyRecord };
   },
 
   history: async (params?: { search?: string; from?: string; to?: string }) => {
