@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: smartbill_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: smartbill_user
+      POSTGRES_PASSWORD: smartbill_password
+      POSTGRES_DB: smartbill_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: smartbill_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      DATABASE_URL: "postgresql://smartbill_user:smartbill_password@postgres:5432/smartbill_db?schema=public"
+      CORS_ORIGIN: "http://localhost:5173"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: smartbill_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://localhost:5000/api"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
