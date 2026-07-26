@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color: #111111;
+    background-color: #F7F5EF;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #F7F5EF;
+    color: #111111;
+    margin: 0;
+    min-width: 320px;
+  }
+}
+
+/* Custom Neo-Brutalist Utilities */
+.brutal-border {
+  border: 2px solid #111111;
+}
+
+.brutal-border-lg {
+  border: 3px solid #111111;
+}
+
+.brutal-shadow {
+  box-shadow: 5px 5px 0px #111111;
+}
+
+.brutal-shadow-sm {
+  box-shadow: 3px 3px 0px #111111;
+}
+
+.brutal-shadow-lg {
+  box-shadow: 8px 8px 0px #111111;
+}
+
+.brutal-btn {
+  border: 2px solid #111111;
+  box-shadow: 4px 4px 0px #111111;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.brutal-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #111111;
+}
+
+.brutal-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #111111;
+}
+
+/* Tabular Numerals for Financial Data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print specific styles for PDF/Print output */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .no-print,
+  nav,
+  aside,
+  header,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .printable-area {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    padding: 2rem !important;
+  }
+}
