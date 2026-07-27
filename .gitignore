@@ -9,9 +9,6 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
-# Prisma
-server/prisma/migrations/
-
 # OS
 .DS_Store
 Thumbs.db
