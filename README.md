@@ -1,159 +1,164 @@
 # SmartBill
 
-SmartBill is a polished full-stack invoice and billing application built as a developer assessment project. It combines a neo-brutalist React frontend with an Express + Prisma + PostgreSQL backend, following an MVC-style architecture and emphasizing clean billing logic, validation, and maintainable structure.
+> A polished full-stack invoice and billing application with a neo-brutalist design.
 
-## Highlights
+![alt text](image-1.png)
 
-- Professional invoice creation workflow
-- Live billing calculations with backend recalculation as the source of truth
-- Dashboard with invoice summaries and recent invoices
-- Invoice detail view with print-friendly output
-- CRUD support for invoices and customers
-- Prisma-based persistence with PostgreSQL
-- Unit tests for billing business logic
-- Docker support for local development
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-neo--smart--bill.vercel.app-6C3BFF?style=for-the-badge)](https://neo-smart-bill.vercel.app)
+[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Backend](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://render.com)
+
+---
+
+## Overview
+
+SmartBill is a full-stack billing application built as a developer assessment project. It covers the complete invoice lifecycle — from creation to payment tracking — with a clean, opinionated UI and a well-structured backend.
+
+![alt text](image-3.png)
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| 🧾 Invoice Management | Create, edit, view, delete invoices with line items |
+| 👥 Customer Management | CRUD for customers, auto-created on invoice save |
+| 🏢 Business Profiles | Save multiple business profiles, auto-fill on new invoice |
+| 📊 Dashboard | Revenue bar chart, status pie chart, recent invoices |
+| 💰 Live Calculations | Tax, discount, and totals recalculated on the backend |
+| 🔐 Authentication | JWT-based signup and signin |
+| 🖨️ Print View | Clean print-friendly invoice detail page |
+| ₹ INR Support | All amounts in Indian Rupees |
+
+---
+
+## Tech Stack
+
+**Frontend**
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS (neo-brutalist design system)
+- React Router v6
+- Recharts
+- Lucide Icons
+
+**Backend**
+- Node.js + Express + TypeScript
+- Prisma ORM
+- PostgreSQL
+- Zod validation
+- JWT authentication
+- Docker
+
+---
 
 ## Architecture
 
 The backend follows an MVC-oriented structure:
 
-- Controllers: request handling and response shaping
-- Services: business logic and orchestration
-- Validators: Zod-based input validation
-- Middleware: centralized error handling
-- Utils: reusable invoice and monetary helpers
+```
+server/src/
+├── controllers/   # Request handling and response shaping
+├── services/      # Business logic and orchestration
+├── validators/    # Zod-based input validation
+├── middleware/    # Centralized error handling, auth guard
+└── utils/         # Invoice calculations, monetary helpers
+```
 
-This separation keeps invoice calculations and persistence logic independent from HTTP concerns, making the app easier to maintain and extend.
+**Key design decisions:**
+- Invoice values stored as **snapshots** — historical invoices stay consistent even if prices change
+- Totals **recalculated on the backend** before saving — server is the source of truth
+- Monetary values stored as **integer minor units** (paise) to avoid floating-point drift
 
-## Why the architecture looks like this
-
-1. MVC/service separation keeps HTTP, business rules, and data access responsibilities distinct.
-2. Invoice values are stored as snapshots in the database so historical invoices remain consistent even if current prices change.
-3. Totals are recalculated on the backend before saving to ensure the server remains the authoritative source of truth.
-4. Monetary precision is handled with integer minor units to avoid floating-point drift.
-5. The project prioritizes a small, polished billing experience over a large but shallow feature set.
-
-## Tech Stack
-
-- Frontend: React, TypeScript, Vite, Tailwind CSS, React Router, Lucide Icons
-- Backend: Node.js, Express, TypeScript, Zod
-- Database: PostgreSQL + Prisma ORM
-- Testing: Vitest
-- Containerization: Docker + Docker Compose
+---
 
 ## API Endpoints
 
-- GET /api/health
-- GET /api/invoices
-- GET /api/invoices/:id
-- POST /api/invoices
-- PUT /api/invoices/:id
-- PATCH /api/invoices/:id/status
-- DELETE /api/invoices/:id
-- GET /api/invoices/stats
-- GET /api/customers
-- POST /api/customers
-- PUT /api/customers/:id
-- DELETE /api/customers/:id
+```
+GET     /api/health
+GET     /api/invoices
+GET     /api/invoices/stats
+GET     /api/invoices/:id
+POST    /api/invoices
+PUT     /api/invoices/:id
+PATCH   /api/invoices/:id/status
+DELETE  /api/invoices/:id
+GET     /api/customers
+POST    /api/customers
+PUT     /api/customers/:id
+DELETE  /api/customers/:id
+POST    /api/auth/signup
+POST    /api/auth/signin
+```
+
+---
 
 ## Local Setup
 
-### 1. Clone the repository
-
+**1. Clone**
 ```bash
-git clone <repo-url>
+git clone https://github.com/Akshar-bhakare/SmartBill.git
 cd SmartBill
 ```
 
-### 2. Configure environment variables
-
-Use the existing environment files and adjust values as needed:
-
-```bash
-# Edit server/.env for backend settings
-# Edit client/.env for frontend settings
-```
-
-### 3. Start PostgreSQL
-
-Using Docker:
-
+**2. Start PostgreSQL**
 ```bash
 docker compose up postgres -d
 ```
 
-### 4. Run Prisma migrations and seed data
-
+**3. Backend**
 ```bash
 cd server
 npm install
 npx prisma migrate dev --name init
 npm run prisma:seed
+npm run dev
 ```
 
-### 5. Start the development servers
-
+**4. Frontend**
 ```bash
-# terminal 1
-cd server
-npm run dev
-
-# terminal 2
 cd client
+npm install
 npm run dev
 ```
 
-The frontend will run on http://localhost:5173 and the backend on http://localhost:5000.
+Frontend → `http://localhost:5173`  
+Backend → `http://localhost:5000`
+
+---
 
 ## Environment Variables
 
-### Server
-
-- PORT
-- NODE_ENV
-- DATABASE_URL
-- CORS_ORIGIN
-
-### Client
-
-- VITE_API_URL
-
-## Database Migration
-
-```bash
-cd server
-npx prisma migrate dev
+**server/.env**
+```
+PORT=5000
+NODE_ENV=development
+DATABASE_URL=postgresql://...
+CORS_ORIGIN=http://localhost:5173
+JWT_SECRET=your-secret
 ```
 
-## Running Tests
-
-```bash
-cd server
-npm test
+**client/.env**
+```
+VITE_API_URL=http://localhost:5000
 ```
 
-## Docker Setup
+---
 
-```bash
-docker compose up --build
+## Test Credentials
+
+```
+Email:    test@gmail.com
+Password: Pass@123
 ```
 
-This will start PostgreSQL, the backend, and the frontend together.
+---
 
-## Deployment Notes
+## Deployment
 
-- Frontend: deployable to Vercel with the Vite build output
-- Backend: deployable separately with a PostgreSQL-compatible DATABASE_URL
-- Keep secrets in environment variables and avoid committing .env files
-
-## Known Limitations
-
-- The application intentionally focuses on polished core billing workflows rather than extensive analytics or multi-user features.
-- The current implementation uses a simple local-style invoice number generation flow suitable for the assessment scope.
-
-## Future Improvements
-
-- Authentication and authorization
-- PDF export improvements
-- Pagination and advanced filtering
-- Invoice templates and branding customization
+| Service | Platform |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render (Web Service) |
+| Database | Render (PostgreSQL) |
