@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { FileText, Upload, CheckCircle2, AlertCircle, Download, Sparkles, X, History } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { FileText, Upload, CheckCircle2, AlertCircle, Download, Sparkles, X, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { BrutalCard } from '../components/ui/BrutalCard';
 import { BrutalButton } from '../components/ui/BrutalButton';
 import { LoadingSpinner } from '../components/ui/Loading';
-import { warrantyApi } from '../services/warranty.api';
+import { warrantyApi, WarrantyRecord } from '../services/warranty.api';
 
 const WarrantyPage: React.FC = () => {
-  const [invoiceText, setInvoiceText] = useState('');
+  const navigate = useNavigate();
   const [invoiceFileName, setInvoiceFileName] = useState('');
   const [excelFileName, setExcelFileName] = useState('');
   const [invoiceData, setInvoiceData] = useState<any>(null);
@@ -17,174 +18,142 @@ const WarrantyPage: React.FC = () => {
   const [fileName, setFileName] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
-  const [history, setHistory] = useState<{ fileName: string; invoiceNo: string; blobUrl: string; generatedAt: string }[]>([]);
+  const [recent, setRecent] = useState<WarrantyRecord[]>([]);
+
+  useEffect(() => {
+    warrantyApi.history().then((data) => setRecent(data.slice(0, 5))).catch(() => {});
+  }, []);
 
   const quantityStatus = useMemo(() => {
-    if (!invoiceData) return null;
-    if (serialNumbers.length === 0) return null;
+    if (!invoiceData || serialNumbers.length === 0) return null;
     return serialNumbers.length === invoiceData.quantity
-      ? { ok: true, label: 'Quantity matched' }
-      : { ok: false, label: `Expected ${invoiceData.quantity} serial numbers, found ${serialNumbers.length}` };
+      ? { ok: true }
+      : { ok: false, label: `Expected ${invoiceData.quantity}, found ${serialNumbers.length}` };
   }, [invoiceData, serialNumbers]);
 
-  const handleInvoiceParse = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleInvoiceParse = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
-
-    setLoading(true);
-    setError('');
-    setStatus('Reading invoice PDF text...');
-    setInvoiceFileName(file.name);
-
+    setLoading(true); setError(''); setStatus('Reading invoice PDF...'); setInvoiceFileName(file.name);
     try {
       const parsed = await warrantyApi.parseInvoice(file);
-      setInvoiceData(parsed);
-      setStatus('Invoice details extracted');
-    } catch (err: any) {
-      setError(err.message || 'Unable to parse invoice');
-    } finally {
-      setLoading(false);
-    }
+      setInvoiceData(parsed); setStatus('Invoice details extracted');
+    } catch (err: any) { setError(err.message || 'Unable to parse invoice'); }
+    finally { setLoading(false); }
   };
 
-  const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
-
-    setLoading(true);
-    setError('');
-    setStatus('Reading serial numbers from Excel...');
-    setExcelFileName(file.name);
-
+    setLoading(true); setError(''); setStatus('Reading serial numbers...'); setExcelFileName(file.name);
     try {
       const parsed = await warrantyApi.parseSerials(file);
-      setSerialNumbers(parsed.serialNumbers);
-      setStatus('Serial numbers loaded');
-    } catch (err: any) {
-      setError(err.message || 'Unable to read Excel file');
-    } finally {
-      setLoading(false);
-    }
+      setSerialNumbers(parsed.serialNumbers); setStatus('Serial numbers loaded');
+    } catch (err: any) { setError(err.message || 'Unable to read Excel file'); }
+    finally { setLoading(false); }
   };
 
   const generateWarranty = async () => {
-    if (!invoiceData || serialNumbers.length === 0) {
-      setError('Please parse both files first.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setStatus('Generating warranty PDF...');
-
+    if (!invoiceData || serialNumbers.length === 0) { setError('Please parse both files first.'); return; }
+    setLoading(true); setError(''); setStatus('Generating warranty PDF...');
     try {
       const result = await warrantyApi.generate(invoiceData, serialNumbers);
-      const base = (import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000');
-      const fullUrl = `${base}${result.downloadUrl}`;
-      const res = await fetch(fullUrl);
+      const base = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000';
+      const res = await fetch(`${base}${result.downloadUrl}`);
       const blob = await res.blob();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
       setBlobUrl(URL.createObjectURL(blob));
       setFileName(result.fileName);
       setStatus('Warranty PDF ready');
       setShowPreview(true);
-      setHistory((prev) => [
-        { fileName: result.fileName, invoiceNo: invoiceData.invoiceNumber, blobUrl: URL.createObjectURL(blob), generatedAt: new Date().toLocaleTimeString() },
-        ...prev,
-      ]);
-    } catch (err: any) {
-      setError(err.message || 'Could not generate warranty PDF');
-    } finally {
-      setLoading(false);
-    }
+      warrantyApi.history().then((data) => setRecent(data.slice(0, 5))).catch(() => {});
+    } catch (err: any) { setError(err.message || 'Could not generate warranty PDF'); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="flex gap-6">
-      <div className="flex-1 min-w-0 space-y-6">
-      <div>
-        <h1 className="text-3xl lg:text-4xl font-extrabold uppercase tracking-tight">Warranty Generator</h1>
-        <p className="text-sm text-neutral-500 font-medium mt-1">
-          Upload an invoice and Excel serial list to produce a warranty letter.
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-3xl lg:text-4xl font-extrabold uppercase tracking-tight">Warranty Generator</h1>
+          <p className="text-sm text-neutral-500 font-medium mt-1">Upload an invoice and Excel serial list to produce a warranty letter.</p>
+        </div>
+        <BrutalButton variant="secondary" onClick={() => navigate('/warranty/history')}>
+          <Clock size={14} /> View All History
+        </BrutalButton>
       </div>
 
+      {/* Status */}
       <BrutalCard className="p-6 space-y-4">
         <div className="flex items-center gap-2 text-brand-purple font-extrabold uppercase tracking-widest text-sm">
-          <Sparkles size={16} strokeWidth={2.5} />
-          Workflow Status
+          <Sparkles size={16} strokeWidth={2.5} /> Workflow Status
         </div>
         <div className="flex flex-wrap gap-3">
-          <div className={`px-3 py-2 border-2 border-black text-sm font-bold ${invoiceFileName ? 'bg-brand-green' : 'bg-white'}`}>
-            {invoiceFileName ? <span className="flex items-center gap-2"><CheckCircle2 size={16} /> Invoice Uploaded</span> : 'Invoice Pending'}
-          </div>
-          <div className={`px-3 py-2 border-2 border-black text-sm font-bold ${excelFileName ? 'bg-brand-green' : 'bg-white'}`}>
-            {excelFileName ? <span className="flex items-center gap-2"><CheckCircle2 size={16} /> Excel Uploaded</span> : 'Excel Pending'}
-          </div>
-          <div className={`px-3 py-2 border-2 border-black text-sm font-bold ${quantityStatus?.ok ? 'bg-brand-green' : 'bg-white'}`}>
-            {quantityStatus ? (quantityStatus.ok ? 'Quantity Matched' : 'Quantity Mismatch') : 'Awaiting Validation'}
-          </div>
+          {[
+            { label: invoiceFileName ? 'Invoice Uploaded' : 'Invoice Pending', active: !!invoiceFileName },
+            { label: excelFileName ? 'Excel Uploaded' : 'Excel Pending', active: !!excelFileName },
+            { label: quantityStatus ? (quantityStatus.ok ? 'Quantity Matched' : (quantityStatus.label ?? 'Mismatch')) : 'Awaiting Validation', active: !!quantityStatus?.ok },
+          ].map((s) => (
+            <div key={s.label} className={`px-3 py-2 border-2 border-black text-sm font-bold flex items-center gap-2 ${s.active ? 'bg-brand-green' : 'bg-white'}`}>
+              {s.active && <CheckCircle2 size={15} />} {s.label}
+            </div>
+          ))}
         </div>
-        {error ? (
-          <div className="flex items-start gap-2 rounded border-2 border-red-500 bg-red-50 p-3 text-sm font-medium text-red-700">
-            <AlertCircle size={16} className="mt-0.5" />
-            <span>{error}</span>
+        {error && (
+          <div className="flex items-start gap-2 border-2 border-red-500 bg-red-50 p-3 text-sm font-medium text-red-700">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" /><span>{error}</span>
           </div>
-        ) : null}
+        )}
         <p className="text-sm text-neutral-600 font-medium">{status}</p>
       </BrutalCard>
 
+      {/* Upload cards */}
       <div className="grid lg:grid-cols-2 gap-6">
         <BrutalCard className="p-6 space-y-4">
           <div className="flex items-center gap-2 font-extrabold uppercase tracking-widest text-sm">
-            <FileText size={16} strokeWidth={2.5} />
-            1. Upload Invoice PDF
+            <FileText size={16} strokeWidth={2.5} /> 1. Upload Invoice PDF
           </div>
           <label className="flex cursor-pointer items-center justify-center gap-2 border-2 border-dashed border-black bg-white p-6 text-sm font-bold uppercase tracking-widest hover:bg-neutral-50">
-            <Upload size={16} />
-            Choose Invoice PDF
+            <Upload size={16} /> Choose Invoice PDF
             <input type="file" accept=".pdf" className="hidden" onChange={handleInvoiceParse} />
           </label>
-          {invoiceData ? (
-            <div className="rounded border-2 border-black bg-neutral-50 p-4 text-sm space-y-1">
+          {invoiceData && (
+            <div className="border-2 border-black bg-neutral-50 p-4 text-sm space-y-1">
               <p><strong>Customer:</strong> {invoiceData.customerName}</p>
               <p><strong>Invoice No:</strong> {invoiceData.invoiceNumber}</p>
               <p><strong>Invoice Date:</strong> {invoiceData.invoiceDate}</p>
               <p><strong>Product:</strong> {invoiceData.productName}</p>
               <p><strong>Qty:</strong> {invoiceData.quantity}</p>
             </div>
-          ) : null}
+          )}
         </BrutalCard>
 
         <BrutalCard className="p-6 space-y-4">
           <div className="flex items-center gap-2 font-extrabold uppercase tracking-widest text-sm">
-            <FileText size={16} strokeWidth={2.5} />
-            2. Upload Excel
+            <FileText size={16} strokeWidth={2.5} /> 2. Upload Excel
           </div>
           <label className="flex cursor-pointer items-center justify-center gap-2 border-2 border-dashed border-black bg-white p-6 text-sm font-bold uppercase tracking-widest hover:bg-neutral-50">
-            <Upload size={16} />
-            Choose Excel File
+            <Upload size={16} /> Choose Excel File
             <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelUpload} />
           </label>
-          {serialNumbers.length > 0 ? (
-            <div className="rounded border-2 border-black bg-neutral-50 p-4 text-sm">
+          {serialNumbers.length > 0 && (
+            <div className="border-2 border-black bg-neutral-50 p-4 text-sm">
               <p><strong>Serials loaded:</strong> {serialNumbers.length}</p>
-              <p className="mt-2 text-xs text-neutral-600">First serial: {serialNumbers[0]}</p>
+              <p className="mt-1 text-xs text-neutral-500">First: {serialNumbers[0]}</p>
             </div>
-          ) : null}
+          )}
         </BrutalCard>
       </div>
 
+      {/* Generate */}
       <BrutalCard className="p-6">
-        {loading ? <LoadingSpinner message="Processing files..." /> : (
+        {loading ? <LoadingSpinner message="Processing..." /> : (
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-xl font-extrabold uppercase tracking-tight">Generate Warranty Letter</h2>
               <p className="text-sm text-neutral-500 font-medium mt-1">
                 {invoiceData && serialNumbers.length > 0
-                  ? quantityStatus?.ok
-                    ? 'Ready to generate the warranty PDF.'
-                    : 'Adjust the serial count to match the invoice quantity.'
+                  ? quantityStatus?.ok ? 'Ready to generate the warranty PDF.' : 'Adjust the serial count to match the invoice quantity.'
                   : 'Upload both files to enable generation.'}
               </p>
             </div>
@@ -192,86 +161,63 @@ const WarrantyPage: React.FC = () => {
               <BrutalButton variant="primary" onClick={generateWarranty} disabled={!invoiceData || serialNumbers.length === 0 || !quantityStatus?.ok}>
                 Generate Warranty PDF
               </BrutalButton>
-              {blobUrl ? (
+              {blobUrl && (
                 <BrutalButton variant="secondary" onClick={() => setShowPreview(true)}>
-                  <Download size={16} />
-                  Preview & Download
+                  <Download size={16} /> Preview & Download
                 </BrutalButton>
-              ) : null}
+              )}
             </div>
           </div>
         )}
       </BrutalCard>
 
-      </div>
-
-      {/* Generated Warranties Sidebar */}
-      <div className="w-72 shrink-0">
-        <BrutalCard className="p-4 space-y-3 sticky top-6">
-          <div className="flex items-center gap-2 font-extrabold uppercase tracking-widest text-sm">
-            <History size={15} strokeWidth={2.5} />
-            Generated Warranties
-          </div>
-          {history.length === 0 ? (
-            <p className="text-xs text-neutral-400 font-medium">No warranties generated yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {history.map((item, idx) => (
-                <div key={idx} className="border-2 border-black bg-neutral-50 p-3 space-y-1">
-                  <p className="text-xs font-bold truncate">{item.invoiceNo}</p>
-                  <p className="text-xs text-neutral-500">{item.generatedAt}</p>
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={() => { setBlobUrl(item.blobUrl); setFileName(item.fileName); setShowPreview(true); }}
-                      className="flex-1 border-2 border-black bg-white px-2 py-1 text-xs font-bold uppercase hover:bg-neutral-100"
-                    >
-                      Preview
-                    </button>
-                    <a
-                      href={item.blobUrl}
-                      download={item.fileName}
-                      className="flex-1 border-2 border-black bg-brand-green px-2 py-1 text-xs font-bold uppercase text-center hover:opacity-90"
-                    >
-                      Download
-                    </a>
-                  </div>
-                </div>
-              ))}
+      {/* Recent */}
+      {recent.length > 0 && (
+        <BrutalCard className="p-6 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 font-extrabold uppercase tracking-widest text-sm">
+              <Clock size={15} strokeWidth={2.5} /> Recent Warranty Records
             </div>
-          )}
+            <button onClick={() => navigate('/warranty/history')} className="text-xs font-bold uppercase text-brand-purple hover:underline">
+              View All →
+            </button>
+          </div>
+          <div className="divide-y divide-neutral-200">
+            {recent.map((r) => (
+              <div key={r.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-3">
+                <div>
+                  <p className="text-sm font-bold truncate">{r.invoiceNumber}</p>
+                  <p className="text-xs text-neutral-500">{r.customerName} · {new Date(r.generatedAt).toLocaleDateString()}</p>
+                </div>
+                <span className="text-xs font-bold bg-neutral-100 border border-neutral-300 px-2 py-1 inline-flex items-center uppercase tracking-widest">
+                  {r.quantity} units
+                </span>
+              </div>
+            ))}
+          </div>
         </BrutalCard>
-      </div>
+      )}
 
-      {showPreview && blobUrl ? (
+      {/* Preview modal */}
+      {showPreview && blobUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="flex w-full max-w-4xl flex-col border-4 border-black bg-white shadow-[8px_8px_0px_#000]" style={{ height: '90vh' }}>
             <div className="flex items-center justify-between border-b-4 border-black px-4 py-3">
               <span className="font-extrabold uppercase tracking-widest text-sm">Warranty PDF Preview</span>
               <div className="flex items-center gap-3">
-                <a
-                  href={blobUrl}
-                  download={fileName}
-                  className="flex items-center gap-2 border-2 border-black bg-brand-green px-4 py-2 text-sm font-bold uppercase tracking-widest shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_#000] transition-all"
-                >
-                  <Download size={14} />
-                  Download PDF
+                <a href={blobUrl} download={fileName}
+                  className="flex items-center gap-2 border-2 border-black bg-brand-green px-4 py-2 text-sm font-bold uppercase tracking-widest shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_#000] transition-all">
+                  <Download size={14} /> Download PDF
                 </a>
-                <button
-                  onClick={() => setShowPreview(false)}
-                  className="flex items-center justify-center border-2 border-black p-2 hover:bg-neutral-100"
-                >
+                <button onClick={() => setShowPreview(false)} className="border-2 border-black p-2 hover:bg-neutral-100">
                   <X size={18} />
                 </button>
               </div>
             </div>
-            <iframe
-              src={blobUrl}
-              className="flex-1 w-full"
-              title="Warranty PDF"
-            />
+            <iframe src={blobUrl} className="flex-1 w-full" title="Warranty PDF" />
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 };
