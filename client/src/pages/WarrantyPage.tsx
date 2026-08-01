@@ -13,7 +13,7 @@ const WarrantyPage: React.FC = () => {
   const [serialNumbers, setSerialNumbers] = useState<string[]>([]);
   const [status, setStatus] = useState('Ready to begin');
   const [loading, setLoading] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState('');
+  const [blobUrl, setBlobUrl] = useState('');
   const [fileName, setFileName] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
@@ -79,7 +79,11 @@ const WarrantyPage: React.FC = () => {
     try {
       const result = await warrantyApi.generate(invoiceData, serialNumbers);
       const base = (import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000');
-      setDownloadUrl(`${base}/api${result.downloadUrl}`);
+      const fullUrl = `${base}/api${result.downloadUrl}`;
+      const res = await fetch(fullUrl);
+      const blob = await res.blob();
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      setBlobUrl(URL.createObjectURL(blob));
       setFileName(result.fileName);
       setStatus('Warranty PDF ready');
       setShowPreview(true);
@@ -182,7 +186,7 @@ const WarrantyPage: React.FC = () => {
               <BrutalButton variant="primary" onClick={generateWarranty} disabled={!invoiceData || serialNumbers.length === 0 || !quantityStatus?.ok}>
                 Generate Warranty PDF
               </BrutalButton>
-              {downloadUrl ? (
+              {blobUrl ? (
                 <BrutalButton variant="secondary" onClick={() => setShowPreview(true)}>
                   <Download size={16} />
                   Preview & Download
@@ -193,14 +197,14 @@ const WarrantyPage: React.FC = () => {
         )}
       </BrutalCard>
 
-      {showPreview && downloadUrl ? (
+      {showPreview && blobUrl ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="flex w-full max-w-4xl flex-col border-4 border-black bg-white shadow-[8px_8px_0px_#000]" style={{ height: '90vh' }}>
             <div className="flex items-center justify-between border-b-4 border-black px-4 py-3">
               <span className="font-extrabold uppercase tracking-widest text-sm">Warranty PDF Preview</span>
               <div className="flex items-center gap-3">
                 <a
-                  href={downloadUrl}
+                  href={blobUrl}
                   download={fileName}
                   className="flex items-center gap-2 border-2 border-black bg-brand-green px-4 py-2 text-sm font-bold uppercase tracking-widest shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_#000] transition-all"
                 >
@@ -216,7 +220,7 @@ const WarrantyPage: React.FC = () => {
               </div>
             </div>
             <iframe
-              src={downloadUrl}
+              src={blobUrl}
               className="flex-1 w-full"
               title="Warranty PDF"
             />
