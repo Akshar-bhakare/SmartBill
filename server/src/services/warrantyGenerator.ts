@@ -45,6 +45,11 @@ export const renderWarrantyTemplate = (
   const resolvedTemplatePath = templatePath || path.resolve(process.cwd(), 'templates/warranty.html');
   const template = fs.readFileSync(resolvedTemplatePath, 'utf8');
 
+  const logoPath = path.resolve(process.cwd(), 'templates/logo.jpeg');
+  const logoBase64 = fs.existsSync(logoPath)
+    ? `data:image/jpeg;base64,${fs.readFileSync(logoPath).toString('base64')}`
+    : '';
+
   const rowsHtml = rows
     .map(
       (row) => `
@@ -57,12 +62,21 @@ export const renderWarrantyTemplate = (
     )
     .join('');
 
+  const buyerAddressHtml = invoiceData.customerAddress.split('\n').join('<br>');
+  const sellerAddressHtml = (invoiceData.sellerAddress || '').split('\n').join('<br>');
+
   return template
+    .replace(/\{\{logo\}\}/g, logoBase64)
     .replace(/\{\{customerName\}\}/g, invoiceData.customerName)
+    .replace(/\{\{customerAddress\}\}/g, buyerAddressHtml)
+    .replace(/\{\{gst\}\}/g, invoiceData.gstin)
+    .replace(/\{\{placeOfSupply\}\}/g, invoiceData.placeOfSupply || '')
+    .replace(/\{\{sellerName\}\}/g, invoiceData.sellerName || invoiceData.companyName)
+    .replace(/\{\{sellerAddress\}\}/g, sellerAddressHtml)
+    .replace(/\{\{sellerGstin\}\}/g, invoiceData.sellerGstin || '')
+    .replace(/\{\{warrantyNo\}\}/g, invoiceData.warrantyNumber)
     .replace(/\{\{invoiceNo\}\}/g, invoiceData.invoiceNumber)
     .replace(/\{\{invoiceDate\}\}/g, invoiceData.invoiceDate)
-    .replace(/\{\{address\}\}/g, invoiceData.customerAddress)
-    .replace(/\{\{gst\}\}/g, invoiceData.gstin)
     .replace(/\{\{product\}\}/g, invoiceData.productName)
     .replace(/\{\{manufacturer\}\}/g, invoiceData.manufacturer)
     .replace(/\{\{serialRows\}\}/g, rowsHtml);
