@@ -91,7 +91,7 @@ export class WarrantyController {
       await page.pdf({ path: outputPath, format: 'A4', printBackground: true });
       await browser.close();
 
-      await prisma.warrantyRecord.create({
+      const record = await prisma.warrantyRecord.create({
         data: {
           invoiceNumber: invoiceData.invoiceNumber || 'N/A',
           customerName: invoiceData.customerName || 'Customer',
@@ -107,6 +107,7 @@ export class WarrantyController {
           fileName: filename,
           downloadUrl: `/api/warranty/download/${filename}`,
           outputPath,
+          record,
         },
       });
     } catch (error) {

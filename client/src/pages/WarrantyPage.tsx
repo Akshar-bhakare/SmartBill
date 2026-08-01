@@ -113,7 +113,7 @@ const WarrantyPage: React.FC = () => {
       setStatus('Warranty PDF ready');
       setShowPreview(true);
       toast('Warranty PDF generated successfully', 'success');
-      refreshRecent();
+      setRecent((prev) => [result.record, ...prev].slice(0, 5));
     } catch (err: any) {
       setError(err.message || 'Could not generate warranty PDF');
       toast(err.message || 'Could not generate warranty PDF', 'error');
