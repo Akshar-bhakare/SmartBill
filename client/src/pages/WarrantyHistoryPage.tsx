@@ -4,6 +4,7 @@ import { BrutalCard } from '../components/ui/BrutalCard';
 import { BrutalButton } from '../components/ui/BrutalButton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { LoadingSpinner } from '../components/ui/Loading';
+import { useToast } from '../components/ui/Toast';
 import { warrantyApi, WarrantyRecord } from '../services/warranty.api';
 
 const WarrantyHistoryPage: React.FC = () => {
@@ -14,6 +15,7 @@ const WarrantyHistoryPage: React.FC = () => {
   const [to, setTo] = useState('');
   const [downloading, setDownloading] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
@@ -28,9 +30,15 @@ const WarrantyHistoryPage: React.FC = () => {
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
   const handleDelete = async (id: string) => {
-    await warrantyApi.deleteRecord(id);
-    setRecords((prev) => prev.filter((r) => r.id !== id));
-    setDeleteTarget(null);
+    try {
+      await warrantyApi.deleteRecord(id);
+      setRecords((prev) => prev.filter((r) => r.id !== id));
+      toast('Warranty record deleted', 'success');
+    } catch {
+      toast('Failed to delete warranty record', 'error');
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   const handleDeleteConfirm = () => {
