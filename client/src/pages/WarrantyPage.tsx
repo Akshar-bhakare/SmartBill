@@ -42,6 +42,35 @@ const WarrantyPage: React.FC = () => {
       : { ok: false, label: `Expected ${invoiceData.quantity}, found ${serialNumbers.length}` };
   }, [invoiceData, serialNumbers]);
 
+  const resetForm = () => {
+    setInvoiceFileName('');
+    setExcelFileName('');
+    setInvoiceData(null);
+    setSerialNumbers([]);
+    setStatus('Ready to begin');
+    setError('');
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+      setBlobUrl('');
+    }
+    setFileName('');
+    setShowPreview(false);
+  };
+
+  const clearInvoiceSelection = () => {
+    setInvoiceFileName('');
+    setInvoiceData(null);
+    setStatus('Ready to begin');
+    setError('');
+  };
+
+  const clearExcelSelection = () => {
+    setExcelFileName('');
+    setSerialNumbers([]);
+    setStatus('Ready to begin');
+    setError('');
+  };
+
   const handleInvoiceParse = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -137,6 +166,19 @@ const WarrantyPage: React.FC = () => {
             <Upload size={16} /> Choose Invoice PDF
             <input type="file" accept=".pdf" className="hidden" onChange={handleInvoiceParse} />
           </label>
+          {invoiceFileName && (
+            <div className="flex items-center justify-between border border-black bg-white px-4 py-3 text-sm font-bold">
+              <span className="truncate">{invoiceFileName}</span>
+              <button
+                type="button"
+                onClick={clearInvoiceSelection}
+                className="text-neutral-500 hover:text-black"
+                aria-label="Clear invoice selection"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
           {invoiceData && (
             <div className="border-2 border-black bg-neutral-50 p-4 text-sm space-y-1">
               <p><strong>Customer:</strong> {invoiceData.customerName}</p>
@@ -156,6 +198,19 @@ const WarrantyPage: React.FC = () => {
             <Upload size={16} /> Choose Excel File
             <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelUpload} />
           </label>
+          {excelFileName && (
+            <div className="flex items-center justify-between border border-black bg-white px-4 py-3 text-sm font-bold">
+              <span className="truncate">{excelFileName}</span>
+              <button
+                type="button"
+                onClick={clearExcelSelection}
+                className="text-neutral-500 hover:text-black"
+                aria-label="Clear Excel selection"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
           {serialNumbers.length > 0 && (
             <div className="border-2 border-black bg-neutral-50 p-4 text-sm">
               <p><strong>Serials loaded:</strong> {serialNumbers.length}</p>
@@ -229,7 +284,13 @@ const WarrantyPage: React.FC = () => {
                   className="flex items-center gap-2 border-2 border-black bg-brand-green px-4 py-2 text-sm font-bold uppercase tracking-widest shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_#000] transition-all">
                   <Download size={14} /> Download PDF
                 </a>
-                <button onClick={() => setShowPreview(false)} className="border-2 border-black p-2 hover:bg-neutral-100">
+                <button
+                  onClick={() => {
+                    setShowPreview(false);
+                    resetForm();
+                  }}
+                  className="border-2 border-black p-2 hover:bg-neutral-100"
+                >
                   <X size={18} />
                 </button>
               </div>
