@@ -1,6 +1,14 @@
 FROM node:20-slim AS builder
 
-RUN apt-get update -y && apt-get install -y openssl
+ARG DATABASE_PUBLIC_URL="postgresql://postgres:xEumdkidBTSCqwakEWRedVvxvlYPxQgI@:/railway"
+ARG DATABASE_URL="postgresql://postgres:xEumdkidBTSCqwakEWRedVvxvlYPxQgI@postgres.railway.internal:5432/railway"
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl chromium fonts-liberation ca-certificates && rm -rf /var/lib/apt/lists/*
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV DATABASE_PUBLIC_URL=$DATABASE_PUBLIC_URL
+ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
 
@@ -11,12 +19,19 @@ RUN npm install
 
 COPY . .
 
-RUN npm run prisma:generate
-RUN npm run build
+RUN chmod +x node_modules/.bin/* && ./node_modules/.bin/prisma generate && npm run build
 
 FROM node:20-slim AS runner
 
-RUN apt-get update -y && apt-get install -y openssl
+ARG DATABASE_PUBLIC_URL="postgresql://postgres:xEumdkidBTSCqwakEWRedVvxvlYPxQgI@:/railway"
+ARG DATABASE_URL="postgresql://postgres:xEumdkidBTSCqwakEWRedVvxvlYPxQgI@postgres.railway.internal:5432/railway"
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl chromium fonts-liberation ca-certificates && rm -rf /var/lib/apt/lists/*
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV DATABASE_PUBLIC_URL=$DATABASE_PUBLIC_URL
+ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
 
@@ -27,4 +42,4 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed && node dist/server.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma generate && ./node_modules/.bin/prisma migrate deploy || true && npm run prisma:seed || true && node dist/server.js"]

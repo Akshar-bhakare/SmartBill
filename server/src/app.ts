@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import authRoutes from './routes/auth.routes.js';
 import customerRoutes from './routes/customer.routes.js';
 import invoiceRoutes from './routes/invoice.routes.js';
+import warrantyRoutes from './routes/warranty.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/warranty', warrantyRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
