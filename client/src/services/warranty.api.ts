@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiClient } from './api';
 
 export interface ParsedInvoiceData {
@@ -52,8 +53,27 @@ export const warrantyApi = {
   },
 
   history: async (params?: { search?: string; from?: string; to?: string }) => {
-    const response = await apiClient.get('/warranty/history', { params });
-    return response.data.data as WarrantyRecord[];
+    const base = (import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000').replace(/\/api\/?$/, '');
+    const primaryUrl = `${base}/api/warranty/history`;
+    const fallbackUrl = `${base}/warranty/history`;
+
+    const parseData = (response: any) => {
+      if (!response?.data?.data || !Array.isArray(response.data.data)) {
+        return [] as WarrantyRecord[];
+      }
+      return response.data.data as WarrantyRecord[];
+    };
+
+    try {
+      const response = await axios.get(primaryUrl, { params });
+      return parseData(response);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        const response = await axios.get(fallbackUrl, { params });
+        return parseData(response);
+      }
+      throw error;
+    }
   },
 
   deleteRecord: async (id: string) => {
