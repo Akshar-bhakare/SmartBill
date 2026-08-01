@@ -13,6 +13,7 @@ import InvoiceDetails from './pages/InvoiceDetails';
 import Customers from './pages/Customers';
 import BusinessPage from './pages/BusinessPage';
 import AccountPage from './pages/AccountPage';
+import WarrantyPage from './pages/WarrantyPage';
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
               <Route path="/customers" element={<Customers />} />
               <Route path="/business" element={<BusinessPage />} />
               <Route path="/account" element={<AccountPage />} />
+              <Route path="/warranty" element={<WarrantyPage />} />
             </Route>
           </Route>
 

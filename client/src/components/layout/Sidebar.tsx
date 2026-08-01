@@ -8,6 +8,7 @@ import {
   X,
   User,
   Building2,
+  ShieldCheck,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/invoices', label: 'Invoices', icon: FileText },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/business', label: 'Business', icon: Building2 },
+  { to: '/warranty', label: 'Warranty', icon: ShieldCheck },
 ];
 
 interface User {
